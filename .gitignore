@@ -1,1 +1,10 @@
 *.pyc
+cmake_install.cmake
+CMakeCache.txt
+*/CMakeFiles/*
+CMakeFiles/*
+hanabi_lib/Makefile
+hanabi_lib/libhanabi.a
+libpyhanabi.so
+Makefile
+game_example
