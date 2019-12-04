@@ -16,8 +16,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import pyhanabi
-from pyhanabi import color_char_to_idx
+from hanabi_learning_environment import pyhanabi
+from hanabi_learning_environment.pyhanabi import color_char_to_idx
 
 MOVE_TYPES = [_.name for _ in pyhanabi.HanabiMoveType]
 
@@ -27,7 +27,7 @@ MOVE_TYPES = [_.name for _ in pyhanabi.HanabiMoveType]
 
 
 class Environment(object):
-  """Abtract Environment interface.
+  """Abstract Environment interface.
 
   All concrete implementations of an environment should derive from this
   interface and implement the method stubs.
