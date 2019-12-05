@@ -133,3 +133,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.vscode/settings.json
+*.cmake
+*.make
+*.o
+*.includecache
+*.internal
+examples/hanabi_lib/CMakeFiles/hanabi.dir/link.txt
+*.marks
+*.a
+hanabi_learning_environment/hanabi_lib/CMakeFiles/hanabi.dir/link.txt
+*.dylib
