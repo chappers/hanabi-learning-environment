@@ -23,6 +23,7 @@ import numpy as np
 
 # add callback just for the score without discounting and difference
 
+
 class MultiHanabiEnv(HanabiEnv, MultiAgentEnv):
     def __init__(
         self,
@@ -34,7 +35,6 @@ class MultiHanabiEnv(HanabiEnv, MultiAgentEnv):
             "max_life_tokens": 3,
             "observation_type": pyhanabi.AgentObservationType.MINIMAL.value,
         },
-            
         game_config={"with_state": True},
     ):
         # see the other env
@@ -45,9 +45,11 @@ class MultiHanabiEnv(HanabiEnv, MultiAgentEnv):
         self.max_actions = self.num_moves() + 1
         self.action_space = Discrete(self.max_actions)
         self.num_players = config["players"]
-        self.global_state_size = self.vectorized_global_shape() # to do...
+        self.global_state_size = self.vectorized_global_shape()  # to do...
         self.state_size = self.vectorized_observation_shape()[0]
-        self.global_state_size = self.vectorized_observation_shape()[0] * self.num_players  # naive way
+        self.global_state_size = (
+            self.vectorized_observation_shape()[0] * self.num_players
+        )  # naive way
 
         self.with_state = self.game_config.get(
             "with_state", False
@@ -86,8 +88,8 @@ class MultiHanabiEnv(HanabiEnv, MultiAgentEnv):
         obs_space = Tuple([self.observation_space for _ in range(self.num_players)])
         act_space = Tuple([self.action_space for _ in range(self.num_players)])
         grouping = {
-        "group_1": list(range(self.num_players)),
-    }
+            "group_1": list(range(self.num_players)),
+        }
         return grouping, obs_space, act_space
 
     def reset(self):
@@ -96,29 +98,21 @@ class MultiHanabiEnv(HanabiEnv, MultiAgentEnv):
 
     def step(self, action):
         """MARL environments expect action from all players"""
-        #print(action)
-        agent_action = action[self.state.cur_player()] - 1 # due to offset
+        # print(action)
+        agent_action = action[self.state.cur_player()] - 1  # due to offset
         agent_action = int(agent_action)
-        #print(self.game.get_move(agent_action))
+        # print(self.game.get_move(agent_action))
         last_rwd = copy.copy(self.state.score())
-        #print("last rwd", last_rwd)
-        obs, _, _, _ = super().step(agent_action)
+        # print("last rwd", last_rwd)
+        super().step(agent_action)
         rwd = copy.copy(self.state.score())
-        #print("current rwd", rwd)
+        # print("current rwd", rwd)
         rwd_diff = rwd - last_rwd
-        if last_rwd == 0 and rwd_diff == 0:
-            rwd_diff = -0.1
-        
-        if rwd_diff < 0:
-            rwd_diff = rwd_diff * 0.5
-        #print(rwd_diff)
         done = self.state.is_terminal()
         obs_all = self._obs()
         dones = {"__all__": done}
-        if not done:
-            rewards = {idx: rwd_diff for idx in range(self.num_players)}
-        else:
-            rewards = {idx: rwd for idx in range(self.num_players)}
+        rewards = {idx: rwd_diff for idx in range(self.num_players)}
+        # print(rewards)
         return obs_all, rewards, dones, {}
 
     def _obs(self):
@@ -174,7 +168,7 @@ class MultiHanabiEnv(HanabiEnv, MultiAgentEnv):
 config = {
     "colors": 5,
     "ranks": 5,
-    "players": 5,
+    "players": 4,
     "max_information_tokens": 8,
     "max_life_tokens": 3,
     "observation_type": pyhanabi.AgentObservationType.MINIMAL.value,
@@ -187,28 +181,26 @@ grouping, obs_space, act_space = env.get_group_mapping()
 register_env(
     "grouped_hanabi",
     lambda config: MultiHanabiEnv(config).with_agent_groups(
-        grouping, obs_space=obs_space, act_space=act_space))
+        grouping, obs_space=obs_space, act_space=act_space
+    ),
+)
 
 qmix_config = {
-            "sample_batch_size": 4,
-            "train_batch_size": 32,
-            "exploration_fraction": .4,
-            "exploration_final_eps": 0.0,
-            "num_workers": 0,
-            "mixer": "qmix",
-            "env_config": {
-                "separate_state_space": True,
-                "one_hot_state_encoding": True
-            },
-        }
+    "sample_batch_size": 4,
+    "train_batch_size": 32,
+    "exploration_fraction": 0.4,
+    "exploration_final_eps": 0.0,
+    "num_workers": 0,
+    "mixer": "vdn",
+    "env_config": {"separate_state_space": False, "one_hot_state_encoding": True},
+}
 
 ray.init()
 tune.run(
     "QMIX",
-    stop={"episodes_total": 1000000},
-    config=dict(qmix_config, **{
-        "env": "grouped_hanabi",
-        "gamma": 1.01,
-    }),
+    stop={"episodes_total": 100000},
+    config=dict(qmix_config, **{"env": "grouped_hanabi", "gamma": 0.99,}),
     max_failures=4,
+    checkpoint_at_end=True,
+    checkpoint_freq=500,
 )
