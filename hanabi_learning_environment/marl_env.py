@@ -104,14 +104,15 @@ class MultiHanabiEnv(HanabiEnv, MultiAgentEnv):
         # print(self.game.get_move(agent_action))
         last_rwd = copy.copy(self.state.score())
         # print("last rwd", last_rwd)
-        super().step(agent_action)
+        _, final_reward, _, _ = super().step(agent_action)
         rwd = copy.copy(self.state.score())
         # print("current rwd", rwd)
         rwd_diff = rwd - last_rwd
         done = self.state.is_terminal()
         obs_all = self._obs()
         dones = {"__all__": done}
-        rewards = {idx: rwd_diff for idx in range(self.num_players)}
+        rewards = {idx: final_reward for idx in range(self.num_players)}
+        #print(rewards)
         # print(rewards)
         return obs_all, rewards, dones, {}
 
